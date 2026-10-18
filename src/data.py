@@ -103,6 +103,26 @@ def separate_inputs_target(frame):
             validated["Churn"].map({"No": 0, "Yes": 1}).astype(int))
 
 
+def split_data(frame):
+    """Return X_train, X_test, y_train, y_test using the fixed coursework split.
+
+    Keep original CSV row order and indices for reproducibility. No preprocessing
+    is fitted here. The test partition is reserved for final model evaluation.
+    """
+    from sklearn.model_selection import train_test_split
+
+    if not frame.index.is_unique:
+        raise ValueError("Row indices must be unique before splitting")
+    inputs, target = separate_inputs_target(frame)
+    if set(target.unique()) != {0, 1} or target.value_counts().min() < 2:
+        raise ValueError("Stratified splitting requires at least two rows in each target class")
+    try:
+        return train_test_split(inputs, target, test_size=0.2,
+                                random_state=42, shuffle=True, stratify=target)
+    except ValueError as exc:
+        raise ValueError("Dataset is too small for the fixed stratified 80/20 split") from exc
+
+
 def inspect_data(frame):
     """Return structural counts only; detailed exploration belongs to training data."""
     return {

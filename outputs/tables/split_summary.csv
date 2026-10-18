@@ -1,0 +1,3 @@
+partition,rows,requested_fraction,seed
+training,5634,0.8,42
+held_out,1409,0.2,42

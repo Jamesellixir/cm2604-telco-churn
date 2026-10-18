@@ -1,0 +1,44 @@
+feature,category,count,percent
+gender,Female,2801,49.71600993965211
+gender,Male,2833,50.28399006034789
+SeniorCitizen,0,4714,83.67057152999645
+SeniorCitizen,1,920,16.32942847000355
+Partner,No,2905,51.561945331913385
+Partner,Yes,2729,48.438054668086615
+Dependents,No,3955,70.19879304224352
+Dependents,Yes,1679,29.801206957756477
+PhoneService,No,559,9.92190273340433
+PhoneService,Yes,5075,90.07809726659566
+MultipleLines,No,2685,47.657082002129926
+MultipleLines,No phone service,559,9.92190273340433
+MultipleLines,Yes,2390,42.421015264465744
+InternetService,DSL,1937,34.38054668086617
+InternetService,Fiber optic,2483,44.07170749023784
+InternetService,No,1214,21.547745828895987
+OnlineSecurity,No,2797,49.64501242456514
+OnlineSecurity,No internet service,1214,21.547745828895987
+OnlineSecurity,Yes,1623,28.80724174653887
+OnlineBackup,No,2442,43.34398296059638
+OnlineBackup,No internet service,1214,21.547745828895987
+OnlineBackup,Yes,1978,35.10827121050763
+DeviceProtection,No,2472,43.87646432374867
+DeviceProtection,No internet service,1214,21.547745828895987
+DeviceProtection,Yes,1948,34.575789847355345
+TechSupport,No,2771,49.183528576499825
+TechSupport,No internet service,1214,21.547745828895987
+TechSupport,Yes,1649,29.268725594604188
+StreamingTV,No,2226,39.51011714589989
+StreamingTV,No internet service,1214,21.547745828895987
+StreamingTV,Yes,2194,38.94213702520412
+StreamingMovies,No,2217,39.350372736954206
+StreamingMovies,No internet service,1214,21.547745828895987
+StreamingMovies,Yes,2203,39.1018814341498
+Contract,Month-to-month,3102,55.05857294994675
+Contract,One year,1173,20.820021299254527
+Contract,Two year,1359,24.121405750798722
+PaperlessBilling,No,2303,40.876819311324105
+PaperlessBilling,Yes,3331,59.123180688675895
+PaymentMethod,Bank transfer (automatic),1244,22.080227192048277
+PaymentMethod,Credit card (automatic),1213,21.529996450124244
+PaymentMethod,Electronic check,1891,33.56407525736599
+PaymentMethod,Mailed check,1286,22.825701100461483
