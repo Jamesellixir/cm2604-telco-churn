@@ -3,10 +3,9 @@
 CM2604 Machine Learning coursework, Part 01. The project will compare KNN,
 logistic regression and random forest for predicting customer churn.
 
-Release 2 adds the fixed stratified split and training-data exploration to the
-dataset validation from Release 1. The executed notebook contains aggregate
-statistics, charts and supported observations. Models and experimental results
-will be added in later releases.
+Release 3 adds scaled/unscaled preprocessing and a measured majority-class
+baseline to the dataset validation and training-data exploration. The required
+KNN, logistic regression and random forest comparisons follow in later releases.
 
 ## Setup
 
@@ -46,6 +45,7 @@ line endings will fail the checksum; retain the original file rather than editin
 & "$env:USERPROFILE\venvs\cm2604-telco-churn\Scripts\python.exe" -m src.data
 & "$env:USERPROFILE\venvs\cm2604-telco-churn\Scripts\python.exe" -m unittest discover -s tests -v
 & "$env:USERPROFILE\venvs\cm2604-telco-churn\Scripts\python.exe" scripts/run_exploration.py
+& "$env:USERPROFILE\venvs\cm2604-telco-churn\Scripts\python.exe" -m src.train
 ```
 
 Use `-m src.data --path "C:\path\to\WA_Fn-UseC_-Telco-Customer-Churn.csv"`
@@ -74,8 +74,8 @@ notebook and regenerates the aggregate outputs.
 `split_data` returns `X_train, X_test, y_train, y_test`. It uses stratification by
 churn, seed 42 and a 20% test fraction. The original CSV order must stay unchanged.
 The resulting partitions contain 5,634 training rows and 1,409 held-out rows.
-The held-out features are reserved for final evaluation. Imputation and scaling
-are deferred to later training pipelines.
+The held-out features are reserved for final evaluation. The exploration notebook
+describes the training data before imputation and scaling.
 
 Seven aggregate CSV tables are in [outputs/tables](outputs/tables), including
 numeric statistics, missing values, categorical counts and churn comparisons.
@@ -88,6 +88,66 @@ are missing, all at zero tenure. Observed churn rates are 42.75% for month-to-mo
 for churned customers and 38 months for non-churned customers. These are
 descriptive associations within the training data, not estimates of causation
 or model performance.
+
+## Preprocessing and baseline
+
+`build_preprocessor(scaled=True)` constructs an unfitted transformer for KNN and
+logistic regression. `scaled=False` supplies unscaled numeric values for random
+forest and the dummy baseline. The three numeric fields are converted to numbers;
+blanks become missing values. Missing numbers use training-fold medians, followed
+by numeric standardisation in the scaled branch. The other 16 predictors,
+including SeniorCitizen, use most-frequent imputation and one-hot encoding.
+Unseen categories produce zeros in that field's indicator columns. Service labels
+such as "No internet service" remain separate categories.
+
+The source loader validates the original CSV strictly. The preprocessing functions
+also handle missing predictor values in new inputs. A numeric column that is
+entirely missing in a training fold is retained and filled with zero as a fallback.
+No source rows are dropped, resampled or used to fit preprocessing before the split.
+
+The baseline pipeline combines preprocessing with
+`DummyClassifier(strategy="most_frequent")`. It learns the majority class from
+each training fold and always predicts that class. This is a reference for later
+models; it does not use customer attributes to choose its predictions
+(scikit-learn developers, n.d.a).
+
+`python -m src.train` uses only the 5,634 training rows with five stratified folds,
+shuffling and seed 42. Each fold clones and fits the complete pipeline, including
+its imputation and encoding. The command exports
+[fold results](outputs/tables/baseline_cv_folds.csv),
+[means and standard deviations](outputs/tables/baseline_cv_summary.csv) and
+[configuration](outputs/tables/baseline_configuration.json).
+Times are measured in seconds and vary between runs. Standard deviations use
+`ddof=0`; all five folds have equal weight. Churn (`Yes = 1`) is the positive class.
+Undefined precision is reported as zero using `zero_division=0`.
+
+| Cross-validation metric | Mean | Standard deviation |
+|---|---:|---:|
+| Churn F1 | 0.000000 | 0.000000 |
+| Churn precision | 0.000000 | 0.000000 |
+| Churn recall | 0.000000 | 0.000000 |
+| Accuracy | 0.734647 | 0.000094 |
+| Balanced accuracy | 0.500000 | 0.000000 |
+| ROC-AUC | 0.500000 | 0.000000 |
+| Average precision | 0.265353 | 0.000094 |
+
+Every fold predicts No for every validation customer. Its approximately 73.46%
+accuracy therefore comes with zero churn recall. This gives the later models a
+reference that accuracy alone would hide. The `most_frequent` strategy assigns
+churn probability zero, so its ROC-AUC is 0.5 and its average precision equals
+the validation churn fraction. These are training cross-validation results;
+the held-out test partition has not been evaluated.
+
+Tests check hand-calculated imputation and scaling, missing values, unknown
+categories, reproducible folds and aligned labels. Fold audits inspect the fitted
+transformers to verify that medians, scaling and category vocabularies come from
+that fold's training rows. See scikit-learn's guidance on keeping preprocessing
+inside pipelines to prevent leakage (scikit-learn developers, n.d.b).
+
+References: scikit-learn developers (n.d.a)
+[*DummyClassifier*](https://scikit-learn.org/stable/modules/generated/sklearn.dummy.DummyClassifier.html);
+scikit-learn developers (n.d.b)
+[*Common pitfalls and recommended practices*](https://scikit-learn.org/stable/common_pitfalls.html).
 
 ## Coursework requirements
 

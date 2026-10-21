@@ -1,0 +1,22 @@
+{
+  "model": "DummyClassifier",
+  "strategy": "most_frequent",
+  "numeric_scaling": false,
+  "numeric_imputation": "median",
+  "categorical_imputation": "most_frequent",
+  "encoding": "one-hot, unknown ignored",
+  "split_seed": 42,
+  "test_fraction": 0.2,
+  "cv_folds": 5,
+  "cv_shuffle": true,
+  "cv_seed": 42,
+  "training_rows": 5634,
+  "selection_metric": "f1",
+  "positive_label": 1,
+  "threshold": 0.5,
+  "std_ddof": 0,
+  "zero_division": 0,
+  "scikit_learn_version": "1.9.1",
+  "csv_sha256": "88be4b93fbe0cc83421af1c503794c97c342eca914c1576db7c276e61d61358a",
+  "timing_note": "Wall-clock times vary between runs; scores should reproduce."
+}
