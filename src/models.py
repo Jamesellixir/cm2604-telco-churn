@@ -35,3 +35,17 @@ def build_default_models():
                                             random_state=42, n_jobs=1)),
         ]),
     }
+
+
+def fixed_search_grids():
+    """Return only the parameter choices approved in the saved coursework plan."""
+    return {
+        "knn": {"model__n_neighbors": [5, 11, 21, 31],
+                "model__weights": ["uniform", "distance"], "model__p": [1, 2]},
+        "logistic_regression": {"model__C": [0.01, 0.1, 1, 10],
+                                "model__class_weight": [None, "balanced"]},
+        "random_forest": {"model__n_estimators": [100, 200],
+                          "model__max_depth": [None, 10],
+                          "model__min_samples_leaf": [1, 5],
+                          "model__class_weight": [None, "balanced"]},
+    }

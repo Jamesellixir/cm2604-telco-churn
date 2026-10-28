@@ -3,9 +3,9 @@
 CM2604 Machine Learning coursework, Part 01. The project will compare KNN,
 logistic regression and random forest for predicting customer churn.
 
-Release 4 compares default KNN, logistic regression and random forest against the
-majority-class baseline using shared training cross-validation. Both notebooks
-contain executed results. Tuning and final held-out evaluation remain future work.
+Release 5 adds the approved grid searches, compares default/tuned validation
+results and freezes a configuration before final test evaluation. Both notebooks
+contain executed results. The held-out test partition remains unevaluated.
 
 ## Setup
 
@@ -47,6 +47,7 @@ line endings will fail the checksum; retain the original file rather than editin
 & "$env:USERPROFILE\venvs\cm2604-telco-churn\Scripts\python.exe" scripts/run_exploration.py
 & "$env:USERPROFILE\venvs\cm2604-telco-churn\Scripts\python.exe" -m src.train
 & "$env:USERPROFILE\venvs\cm2604-telco-churn\Scripts\python.exe" -m src.train --defaults
+& "$env:USERPROFILE\venvs\cm2604-telco-churn\Scripts\python.exe" -m src.train --tune
 & "$env:USERPROFILE\venvs\cm2604-telco-churn\Scripts\python.exe" scripts/run_notebook.py 02_model_comparison.ipynb
 ```
 
@@ -154,11 +155,11 @@ scikit-learn developers (n.d.b)
 ## Default classifier comparison
 
 Open [the executed comparison notebook](notebooks/02_model_comparison.ipynb)
-for short model explanations, checked fold membership, results and a comparison
-chart. The notebook calls the shared Python modules. Run it with the last command
-above to regenerate both its outputs and the comparison files. The
-`--defaults` command regenerates the CSV/JSON files only; rerun the notebook
-afterwards to keep its displayed timings aligned with the exported files.
+for short model explanations, checked fold membership and the default/tuned
+comparison. The notebook calls the shared Python modules and reads the saved
+search results. `--defaults` reproduces the initial default tables; `--tune`
+reproduces the searches and frozen configuration. Run the notebook command last
+to independently replay the six frozen settings and refresh the displayed results.
 
 | Classifier | Starting settings | Numeric preprocessing |
 |---|---|---|
@@ -169,8 +170,8 @@ afterwards to keep its displayed timings aligned with the exported files.
 These are the starting settings fixed in the plan, including the larger iteration
 limit for logistic regression. Each model learns its preprocessing separately
 within the same five folds. All use the same seven metrics and normal binary
-decision boundary at 0.5, with ties favouring No. No tuning, threshold adjustment
-or final model selection occurs in this release.
+decision boundary at 0.5, with ties favouring No. The initial default comparison
+performs no tuning or threshold adjustment.
 
 | Model | Mean churn F1 | Mean churn recall | Mean accuracy | Mean ROC-AUC |
 |---|---:|---:|---:|---:|
@@ -179,9 +180,9 @@ or final model selection occurs in this release.
 | Logistic regression | 0.5930 | 0.5431 | 0.8026 | 0.8461 |
 | Random forest | 0.5385 | 0.4749 | 0.7842 | 0.8178 |
 
-Logistic regression has the highest mean churn F1 among these default
-configurations. The differences concern this training cross-validation design;
-they do not establish the final model or its held-out performance.
+Logistic regression has the highest mean churn F1 among the default
+configurations. The tuning stage below determines the frozen choice across
+both settings. These scores concern training cross-validation only.
 
 The comparison exports [per-fold scores](outputs/tables/default_cv_folds.csv),
 [means and standard deviations](outputs/tables/default_cv_summary.csv),
@@ -190,6 +191,48 @@ The comparison exports [per-fold scores](outputs/tables/default_cv_folds.csv),
 baseline files are preserved. Timings vary between runs; metric scores should
 reproduce in the pinned environment. The notebook audits preprocessing statistics,
 probability ranges and metric calculations without exporting customer-level rows.
+
+## Fixed-grid tuning and frozen choice
+
+```powershell
+& "$env:USERPROFILE\venvs\cm2604-telco-churn\Scripts\python.exe" -m src.train --tune
+& "$env:USERPROFILE\venvs\cm2604-telco-churn\Scripts\python.exe" scripts/run_notebook.py 02_model_comparison.ipynb
+```
+
+The three approved grids contain 16 KNN, 8 logistic regression and 16 random
+forest combinations. GridSearchCV uses the same five training folds, all seven
+metrics and `refit="f1"`; preprocessing remains inside each pipeline. This runs
+200 validation fits and three training-only refits. No additional searches or
+threshold changes are made. Full candidate scores, fold scores, ranks and timing
+summaries are retained in each model's `*_search_results.csv` under outputs/tables.
+
+| Model | Best search parameters | Default F1 | Tuned F1 |
+|---|---|---:|---:|
+| KNN | 31 neighbours, uniform weights, p=1 | 0.5457 | 0.6069 |
+| Logistic regression | C=0.1, balanced class weights | 0.5930 | 0.6289 |
+| Random forest | 100 trees, depth unrestricted, minimum leaf size 5, balanced class weights | 0.5385 | 0.6354 |
+
+The frozen choice is **tuned random forest**, with mean training CV churn F1
+0.6354 and population standard deviation 0.0124. It has the largest mean F1
+among the six configurations. Exact model ties favour logistic regression, then
+KNN, then random forest; within one model an exact tie prefers the default.
+Within a search, the first tied candidate in deterministic grid order wins.
+
+[The frozen configuration](outputs/frozen_configuration.json) stores all six
+reconstructible model settings, the selected ID, decision threshold, data checksum,
+training-index hash and selection rule. A rerun accepts an identical freeze and
+refuses to overwrite a changed one. It stores parameters, not a model binary.
+[Tuning metadata](outputs/tables/tuning_configuration.json) records grids and
+chosen parameters; [the comparison table](outputs/tables/default_tuned_comparison.csv)
+includes every metric and timing for both settings.
+
+The notebook checks all 40 candidates and independently re-evaluates the six
+frozen configurations, including fold-only preprocessing and probability checks.
+It does not rerun the full grids; use `--tune` to reproduce those searches first.
+Scores and choices should reproduce with unchanged data and pinned software;
+timings vary. Tuning scores helped choose parameters and may be optimistic.
+The held-out test set must evaluate these frozen choices without further tuning.
+Final test evaluation, ethics/error analysis and the report remain future work.
 
 ## Coursework requirements
 
