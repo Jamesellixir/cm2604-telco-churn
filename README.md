@@ -3,9 +3,9 @@
 CM2604 Machine Learning coursework, Part 01. The project will compare KNN,
 logistic regression and random forest for predicting customer churn.
 
-Release 3 adds scaled/unscaled preprocessing and a measured majority-class
-baseline to the dataset validation and training-data exploration. The required
-KNN, logistic regression and random forest comparisons follow in later releases.
+Release 4 compares default KNN, logistic regression and random forest against the
+majority-class baseline using shared training cross-validation. Both notebooks
+contain executed results. Tuning and final held-out evaluation remain future work.
 
 ## Setup
 
@@ -46,6 +46,8 @@ line endings will fail the checksum; retain the original file rather than editin
 & "$env:USERPROFILE\venvs\cm2604-telco-churn\Scripts\python.exe" -m unittest discover -s tests -v
 & "$env:USERPROFILE\venvs\cm2604-telco-churn\Scripts\python.exe" scripts/run_exploration.py
 & "$env:USERPROFILE\venvs\cm2604-telco-churn\Scripts\python.exe" -m src.train
+& "$env:USERPROFILE\venvs\cm2604-telco-churn\Scripts\python.exe" -m src.train --defaults
+& "$env:USERPROFILE\venvs\cm2604-telco-churn\Scripts\python.exe" scripts/run_notebook.py 02_model_comparison.ipynb
 ```
 
 Use `-m src.data --path "C:\path\to\WA_Fn-UseC_-Telco-Customer-Churn.csv"`
@@ -148,6 +150,46 @@ References: scikit-learn developers (n.d.a)
 [*DummyClassifier*](https://scikit-learn.org/stable/modules/generated/sklearn.dummy.DummyClassifier.html);
 scikit-learn developers (n.d.b)
 [*Common pitfalls and recommended practices*](https://scikit-learn.org/stable/common_pitfalls.html).
+
+## Default classifier comparison
+
+Open [the executed comparison notebook](notebooks/02_model_comparison.ipynb)
+for short model explanations, checked fold membership, results and a comparison
+chart. The notebook calls the shared Python modules. Run it with the last command
+above to regenerate both its outputs and the comparison files. The
+`--defaults` command regenerates the CSV/JSON files only; rerun the notebook
+afterwards to keep its displayed timings aligned with the exported files.
+
+| Classifier | Starting settings | Numeric preprocessing |
+|---|---|---|
+| KNN | Five neighbours vote equally; Euclidean distance | Median imputation and standardisation |
+| Logistic regression | C=1, lbfgs, max_iter=2000, no class weights | Median imputation and standardisation |
+| Random forest | 100 trees, unrestricted depth, seed 42 | Median imputation without scaling |
+
+These are the starting settings fixed in the plan, including the larger iteration
+limit for logistic regression. Each model learns its preprocessing separately
+within the same five folds. All use the same seven metrics and normal binary
+decision boundary at 0.5, with ties favouring No. No tuning, threshold adjustment
+or final model selection occurs in this release.
+
+| Model | Mean churn F1 | Mean churn recall | Mean accuracy | Mean ROC-AUC |
+|---|---:|---:|---:|---:|
+| Baseline | 0.0000 | 0.0000 | 0.7346 | 0.5000 |
+| KNN | 0.5457 | 0.5311 | 0.7655 | 0.7822 |
+| Logistic regression | 0.5930 | 0.5431 | 0.8026 | 0.8461 |
+| Random forest | 0.5385 | 0.4749 | 0.7842 | 0.8178 |
+
+Logistic regression has the highest mean churn F1 among these default
+configurations. The differences concern this training cross-validation design;
+they do not establish the final model or its held-out performance.
+
+The comparison exports [per-fold scores](outputs/tables/default_cv_folds.csv),
+[means and standard deviations](outputs/tables/default_cv_summary.csv),
+[model parameters](outputs/tables/default_model_configuration.json) and
+[a score chart](outputs/figures/default_model_metrics.png). Existing Release 3
+baseline files are preserved. Timings vary between runs; metric scores should
+reproduce in the pinned environment. The notebook audits preprocessing statistics,
+probability ranges and metric calculations without exporting customer-level rows.
 
 ## Coursework requirements
 

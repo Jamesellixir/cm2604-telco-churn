@@ -1,5 +1,6 @@
-"""Training-only cross-validation and majority-class baseline exports."""
+"""Training-only cross-validation, baseline and default-model exports."""
 
+import argparse
 import json
 from pathlib import Path
 
@@ -10,7 +11,7 @@ from sklearn.metrics import f1_score, make_scorer, precision_score, recall_score
 from sklearn.model_selection import StratifiedKFold, cross_validate
 
 from src.data import CSV_SHA256, load_data, split_data
-from src.models import build_baseline
+from src.models import build_baseline, build_default_models
 
 
 SCORING = {
@@ -60,9 +61,58 @@ def summarise_cv(results):
     return folds, summary
 
 
+def evaluate_defaults(inputs, target):
+    """Evaluate the baseline and three defaults with identical folds and metrics."""
+    models = {"baseline": build_baseline(), **build_default_models()}
+    return {name: evaluate_pipeline(pipeline, inputs, target)
+            for name, pipeline in models.items()}
+
+
+def export_default_comparison(results):
+    """Export only aggregate scores, times and the actual starting parameters."""
+    fold_tables, summary_tables = [], []
+    for name, scores in results.items():
+        folds, summary = summarise_cv(scores)
+        fold_tables.append(folds.assign(model=name))
+        summary_tables.append(summary.assign(model=name))
+    folds = pd.concat(fold_tables, ignore_index=True)
+    summary = pd.concat(summary_tables, ignore_index=True)
+    output = Path(__file__).resolve().parents[1] / "outputs" / "tables"
+    output.mkdir(parents=True, exist_ok=True)
+    folds.to_csv(output / "default_cv_folds.csv", index=False)
+    summary.to_csv(output / "default_cv_summary.csv", index=False)
+    models = {"baseline": build_baseline(), **build_default_models()}
+    first = next(iter(results.values()))
+    config = {
+        "stage": "default comparison; no tuning or final selection",
+        "csv_sha256": CSV_SHA256, "scikit_learn_version": sklearn.__version__,
+        "split_seed": 42, "test_fraction": 0.2, "cv_folds": 5,
+        "cv_shuffle": True, "cv_seed": 42, "positive_label": 1,
+        "threshold": 0.5, "std_ddof": 0, "zero_division": 0,
+        "training_rows": len(first["indices"]["train"][0]) + len(first["indices"]["test"][0]),
+        "metrics": list(SCORING),
+        "models": {name: {"class": type(pipe["model"]).__name__,
+                           "parameters": pipe["model"].get_params(deep=False),
+                           "numeric_scaling": name in {"knn", "logistic_regression"}}
+                   for name, pipe in models.items()},
+        "timing_note": "Wall-clock fit/score times vary; score values should reproduce.",
+    }
+    (output / "default_model_configuration.json").write_text(
+        json.dumps(config, indent=2) + "\n", encoding="utf-8")
+    return folds, summary
+
+
 def main():
+    parser = argparse.ArgumentParser(description="Run training-only cross-validation")
+    parser.add_argument("--defaults", action="store_true", help="Compare baseline and all three default models")
+    args = parser.parse_args()
     inputs, held_out, target, held_out_target = split_data(load_data())
     del held_out, held_out_target
+    if args.defaults:
+        _, summary = export_default_comparison(evaluate_defaults(inputs, target))
+        print(summary.pivot(index="model", columns="metric", values="mean").to_string())
+        print("Saved training-only default comparison in outputs/tables/.")
+        return
     results = evaluate_pipeline(build_baseline(), inputs, target)
     folds, summary = summarise_cv(results)
     output = Path(__file__).resolve().parents[1] / "outputs" / "tables"
