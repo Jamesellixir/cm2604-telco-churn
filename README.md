@@ -251,3 +251,10 @@ all source code as text in its appendix. The assignment deadline is 15 December
 format and the meaning of "both model experimental settings". PDF and default
 versus tuned models are provisional choices. Dataset redistribution permission
 also remains unresolved. The separate closed-book test is outside this project.
+
+
+## Final evaluation (Release 6)
+
+Run `python -m src.evaluate` using the Python environment above. This checks the frozen file hash, refits the six configurations and baseline on training data, then exports final_metrics.csv (train/test scores), final_errors.csv and selected_subgroup_errors.csv. ROC, precision-recall and confusion-matrix figures are under outputs/figures/. The synthetic prediction is outputs/prediction_example.json.
+
+See [error, subgroup, ethics and monitoring analysis](report/final-analysis.md). The selected random forest achieves test F1 0.6316, recall 0.7701 and ROC-AUC 0.8428. Its settings were not changed after test access. Earlier references to an unevaluated test partition describe the preceding development stages; final results are now available. The final assessment report remains future work.
